@@ -665,6 +665,18 @@ class _TestSQLApi(PandasSQLTest):
         self.assertTrue(issubclass(df.IntDateCol.dtype.type, np.datetime64),
                         "IntDateCol loaded with incorrect type")
 
+    def test_sqlite_time(self):
+        # test support for datetime.time
+        df = DataFrame([time(9, 0, 0), time(9, 1, 30)], columns=["a"])
+        # GH 8341
+        # test if time object are correctly converted into string
+        # in a uniform way between sqlalchemy and the sqlite3 fallback
+        if self.flavor == 'sqlite':
+            sql.to_sql(df, "test_time", self.conn, index=False)
+            res = sql.read_sql_query("SELECT * FROM test_time", self.conn)
+            ref = df.applymap(lambda _: _.strftime("%H:%M:%S.%f"))
+            tm.assert_frame_equal(ref, res)
+
     def test_timedelta(self):
 
         # see #6921
@@ -1912,14 +1924,6 @@ class TestSQLiteFallback(SQLiteMixIn, PandasSQLTest):
             tm.assert_frame_equal(res, df.astype(str))
         elif self.flavor == 'mysql':
             tm.assert_frame_equal(res, df)
-
-    def test_datetime_time(self):
-        # test support for datetime.time
-        df = DataFrame([time(9, 0, 0), time(9, 1, 30)], columns=["a"])
-        # test it raises an error and not fails silently (GH8341)
-        if self.flavor == 'sqlite':
-            self.assertRaises(sqlite3.InterfaceError, sql.to_sql, df,
-                              'test_time', self.conn)
 
     def _get_index_columns(self, tbl_name):
         ixs = sql.read_sql_query(
