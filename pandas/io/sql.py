@@ -1399,6 +1399,8 @@ class SQLiteTable(SQLTable):
         # this will transform time(12,34,56,789) into '12:34:56.000789'
         # (this is what sqlalchemy does)
         sqlite3.register_adapter(time, lambda _: _.strftime("%H:%M:%S.%f"))
+        # sqlite3.register_converter(
+        #     "time", lambda _: datetime.strptime(_, '%H:%M:%S.%f').time())
         super(self.__class__, self).__init__(*args, **kwargs)
 
     def sql_schema(self):

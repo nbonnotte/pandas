@@ -669,13 +669,12 @@ class _TestSQLApi(PandasSQLTest):
         # test support for datetime.time
         df = DataFrame([time(9, 0, 0), time(9, 1, 30)], columns=["a"])
         # GH 8341
-        # test if time object are correctly converted into string
-        # in a uniform way between sqlalchemy and the sqlite3 fallback
+        # test if time objects are correctly converted correctly
+        # back and forth, using the registered converter and adapter
         if self.flavor == 'sqlite':
             sql.to_sql(df, "test_time", self.conn, index=False)
             res = sql.read_sql_query("SELECT * FROM test_time", self.conn)
-            ref = df.applymap(lambda _: _.strftime("%H:%M:%S.%f"))
-            tm.assert_frame_equal(ref, res)
+            tm.assert_frame_equal(df, res)
 
     def test_timedelta(self):
 
@@ -1030,7 +1029,7 @@ class TestSQLiteFallbackApi(SQLiteMixIn, _TestSQLApi):
     mode = 'fallback'
 
     def connect(self, database=":memory:"):
-        return sqlite3.connect(database)
+        return sqlite3.connect(database, detect_types=sqlite3.PARSE_DECLTYPES)
 
     def test_sql_open_close(self):
         # Test if the IO in the database still work if the connection closed
@@ -1856,7 +1855,7 @@ class TestSQLiteFallback(SQLiteMixIn, PandasSQLTest):
 
     @classmethod
     def connect(cls):
-        return sqlite3.connect(':memory:')
+        return sqlite3.connect(':memory:',detect_types=sqlite3.PARSE_DECLTYPES)
 
     def setUp(self):
         self.conn = self.connect()
@@ -2147,7 +2146,7 @@ def _skip_if_no_pymysql():
 class TestXSQLite(SQLiteMixIn, tm.TestCase):
 
     def setUp(self):
-        self.conn = sqlite3.connect(':memory:')
+        self.conn = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
 
     def test_basic(self):
         frame = tm.makeTimeDataFrame()
