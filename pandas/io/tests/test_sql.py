@@ -665,6 +665,18 @@ class _TestSQLApi(PandasSQLTest):
         self.assertTrue(issubclass(df.IntDateCol.dtype.type, np.datetime64),
                         "IntDateCol loaded with incorrect type")
 
+    def test_sqlite_time(self):
+        # test support for datetime.time
+        df = DataFrame([time(9, 0, 0), time(9, 1, 30)], columns=["a"])
+        # GH 8341
+        # test if time objects are correctly converted correctly
+        # back and forth, using the registered converter and adapter
+        if self.flavor == 'sqlite':
+            sql.to_sql(df, "test_time", self.conn, index=False)
+            res = sql.read_sql_query("SELECT * FROM test_time", self.conn)
+            ref = df.applymap(lambda _: _.strftime("%H:%M:%S.%f"))
+            tm.assert_frame_equal(ref, res)
+
     def test_timedelta(self):
 
         # see #6921
