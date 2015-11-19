@@ -665,17 +665,6 @@ class _TestSQLApi(PandasSQLTest):
         self.assertTrue(issubclass(df.IntDateCol.dtype.type, np.datetime64),
                         "IntDateCol loaded with incorrect type")
 
-    def test_sqlite_time(self):
-        # test support for datetime.time
-        df = DataFrame([time(9, 0, 0), time(9, 1, 30)], columns=["a"])
-        # GH 8341
-        # test if time objects are correctly converted correctly
-        # back and forth, using the registered converter and adapter
-        if self.flavor == 'sqlite':
-            sql.to_sql(df, "test_time", self.conn, index=False)
-            res = sql.read_sql_query("SELECT * FROM test_time", self.conn)
-            tm.assert_frame_equal(df, res)
-
     def test_timedelta(self):
 
         # see #6921
@@ -1029,7 +1018,7 @@ class TestSQLiteFallbackApi(SQLiteMixIn, _TestSQLApi):
     mode = 'fallback'
 
     def connect(self, database=":memory:"):
-        return sqlite3.connect(database, detect_types=sqlite3.PARSE_DECLTYPES)
+        return sqlite3.connect(database)
 
     def test_sql_open_close(self):
         # Test if the IO in the database still work if the connection closed
@@ -1097,6 +1086,16 @@ class TestSQLiteFallbackApi(SQLiteMixIn, _TestSQLApi):
         schema = table.sql_schema()
         self.assertEqual(self._get_sqlite_column_type(schema, 'time'),
                          "TIMESTAMP")
+
+
+class TestSQLiteFallbackApiWithDetectTypes(TestSQLiteFallbackApi):
+    """
+    Test the public sqlite connection fallback API, with a
+    connection with the detect_types=sqlite3.PARSE_DECLTYPES option
+    """
+
+    def connect(self, database=":memory:"):
+        return sqlite3.connect(database, detect_types=sqlite3.PARSE_DECLTYPES)
 
 
 #------------------------------------------------------------------------------
@@ -1855,7 +1854,7 @@ class TestSQLiteFallback(SQLiteMixIn, PandasSQLTest):
 
     @classmethod
     def connect(cls):
-        return sqlite3.connect(':memory:',detect_types=sqlite3.PARSE_DECLTYPES)
+        return sqlite3.connect(':memory:')
 
     def setUp(self):
         self.conn = self.connect()
@@ -2005,6 +2004,19 @@ class TestSQLiteFallback(SQLiteMixIn, PandasSQLTest):
             sql.table_exists(c_tbl, self.conn)
 
 
+class TestSQLiteFallbackWithDetectTypes(TestSQLiteFallback):
+    """
+    Test the fallback mode against an in-memory sqlite database, with a
+    connection with the detect_types=sqlite3.PARSE_DECLTYPES option
+    """
+
+    @classmethod
+    def connect(cls):
+        return sqlite3.connect(':memory:',
+                               detect_types=sqlite3.PARSE_DECLTYPES)
+
+
+
 class TestMySQLLegacy(MySQLMixIn, TestSQLiteFallback):
     """
     Test the legacy mode against a MySQL database.
@@ -2146,7 +2158,7 @@ def _skip_if_no_pymysql():
 class TestXSQLite(SQLiteMixIn, tm.TestCase):
 
     def setUp(self):
-        self.conn = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
+        self.conn = sqlite3.connect(':memory:')
 
     def test_basic(self):
         frame = tm.makeTimeDataFrame()
@@ -2389,6 +2401,13 @@ class TestXSQLite(SQLiteMixIn, tm.TestCase):
         self.assertEqual(sql.tquery(sql_select, con=self.conn),
                          [(1, 'A'), (2, 'B'), (3, 'C'), (4, 'D'), (5, 'E')])
         clean_up(table_name)
+
+
+class TestXSQLiteWithDetectTypes(TestXSQLite):
+
+    def setUp(self):
+        self.conn = sqlite3.connect(':memory:',
+                                    detect_types=sqlite3.PARSE_DECLTYPES)
 
 
 class TestXMySQL(MySQLMixIn, tm.TestCase):
