@@ -1304,6 +1304,12 @@ class TestIndex(Base, tm.TestCase):
         self.assertTrue(tm.equalContents(result, expected))
         self.assertEqual(result.name, 'new_name')
 
+    def test_modulo(self):
+        # GH 9244
+        intidx = Index(range(10))
+        expected = Int64Index([0, 1, 0, 1, 0, 1, 0, 1, 0, 1], dtype='int64')
+        self.assert_index_equal(intidx % 2, expected)
+
     def test_is_numeric(self):
         self.assertFalse(self.dateIndex.is_numeric())
         self.assertFalse(self.strIndex.is_numeric())
