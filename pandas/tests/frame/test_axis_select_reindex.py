@@ -114,6 +114,16 @@ class TestDataFrameSelectReindex(tm.TestCase, TestData):
         df.drop(labels=df[df.b > 0].index, inplace=True)
         assert_frame_equal(df, expected)
 
+        # multi-index issue
+        # origin of GH 11640
+        df = pd.DataFrame(columns=['a', 'b', 'c', 'd'],
+                          data=[[1, 'b1', 'c1', 3],
+                                [1, 'b2', 'c2', 4]])
+        dg = df.pivot_table(index='a', columns=['b', 'c'], values='d')
+        dg = dg.reset_index()
+        self.assertRaises(KeyError, dg.drop, 'z', axis=1)
+        assert_frame_equal(dg.drop('a', axis=1), dg.drop(('a',  ''), axis=1))
+
     def test_reindex(self):
         newFrame = self.frame.reindex(self.ts1.index)
 

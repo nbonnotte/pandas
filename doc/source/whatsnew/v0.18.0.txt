@@ -504,6 +504,7 @@ Bug Fixes
 
 
 - Bug in timezone info lost when broadcasting scalar datetime to ``DataFrame`` (:issue:`11682`)
+
 - Bug in ``Index`` creation from ``Timestamp`` with mixed tz coerces to UTC (:issue:`11488`)
 - Bug in ``to_numeric`` where it does not raise if input is more than one dimension (:issue:`11776`)
 - Bug in parsing timezone offset strings with non-zero minutes (:issue:`11708`)
@@ -532,7 +533,7 @@ of columns didn't match the number of series provided (:issue:`12039`).
 
 
 - Bug in ``.groupby`` where a ``KeyError`` was not raised for a wrong column if there was only one row in the dataframe (:issue:`11741`)
-
+- Bug showing up in both ``.drop`` and ``.groupby`` for dataframe with multi-indexed columns (:issue:`11640`)
 
 - Removed ``millisecond`` property of ``DatetimeIndex``. This would always raise a ``ValueError`` (:issue:`12019`).
 - Bug in ``Series`` constructor with read-only data (:issue:`11502`)

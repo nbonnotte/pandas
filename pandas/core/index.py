@@ -5727,8 +5727,13 @@ class MultiIndex(Index):
                 loc = self.get_loc(label)
                 if isinstance(loc, int):
                     inds.append(loc)
-                else:
+                elif isinstance(loc, slice):
                     inds.extend(lrange(loc.start, loc.stop))
+                elif is_bool_indexer(loc):
+                    loc = loc.nonzero()[0]
+                    inds.extend(loc)
+                else:
+                    raise AssertionError
             except KeyError:
                 if errors != 'ignore':
                     raise

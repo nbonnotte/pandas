@@ -3092,6 +3092,16 @@ class TestGroupBy(tm.TestCase):
         df2 = pd.DataFrame(np.random.randn(2, 4), columns=list('ABCD'))
         self.assertRaises(KeyError, df2.groupby, 'Z')
 
+    def test_groupby_multi_indexed_columns(self):
+        # GH 11640
+        df = pd.DataFrame(columns=['a', 'b', 'c', 'd'],
+                          data=[[1, 'b1', 'c1', 3],
+                                [1, 'b2', 'c2', 4]])
+        df = df.pivot_table(index='a', columns=['b', 'c'], values='d')
+        df = df.reset_index()
+        assert_frame_equal(df.groupby('a').mean(),
+                           df.groupby(df['a']).mean().drop('a', axis=1))
+
     def test_groupby_nat_exclude(self):
         # GH 6992
         df = pd.DataFrame({'values': np.random.randn(8),
