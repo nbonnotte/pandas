@@ -142,6 +142,22 @@ class TestDataFrameSelectReindex(tm.TestCase, TestData):
 
         tm.assert_frame_equal(result, expected)
 
+    def test_merge_join_multiindex_not_lexsorted(self):
+        # GH 9455
+
+        # first dataframe
+        df1 = DataFrame(columns=['a', 'b'], data=[[0, 1]])
+
+        # second dataframe
+        columns = MultiIndex.from_tuples([('a', ''), ('c', 'c1')])
+        df2 = DataFrame(columns=columns, data=[[0, 2]])
+
+        # merge
+        self.assertRaises(ValueError, pd.merge, df1, df2, on='a')
+
+        # join
+        self.assertRaises(ValueError, df1.join, df2, on='a')
+
     def test_reindex(self):
         newFrame = self.frame.reindex(self.ts1.index)
 

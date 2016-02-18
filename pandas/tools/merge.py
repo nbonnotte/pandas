@@ -193,6 +193,15 @@ class _MergeOperation(object):
                 'can not merge DataFrame with instance of '
                 'type {0}'.format(type(right)))
 
+        # prevent merging between different levels
+        # otherwise there might be an automatic, implicit broadcast
+        def nlevels(idx):
+            if isinstance(idx, MultiIndex):
+                return len(idx.levels)
+            return 1
+        if nlevels(left.columns) != nlevels(right.columns):
+            raise ValueError('can not merge between different levels')
+
         # note this function has side effects
         (self.left_join_keys,
          self.right_join_keys,
