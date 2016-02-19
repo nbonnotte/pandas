@@ -142,21 +142,24 @@ class TestDataFrameSelectReindex(tm.TestCase, TestData):
 
         tm.assert_frame_equal(result, expected)
 
-    def test_merge_join_multiindex_not_lexsorted(self):
+    def test_merge_multiindex_not_lexsorted(self):
         # GH 9455
 
         # first dataframe
         df1 = DataFrame(columns=['a', 'b'], data=[[0, 1]])
 
         # second dataframe
-        columns = MultiIndex.from_tuples([('a', ''), ('c', 'c1')])
-        df2 = DataFrame(columns=columns, data=[[0, 2]])
+        df2a = DataFrame(columns=['c', 'd'], data=[[2, 3]])
+        df2b = DataFrame(columns=['c', 'e'], data=[[4, 5]])
+        df2 = pd.concat([df2a, df2b], keys=['l', 'r'], axis=1)
+        df2.index.name = 'a'
+        df2 = df2.reset_index()
 
-        # merge
-        self.assertRaises(ValueError, pd.merge, df1, df2, on='a')
-
-        # join
-        self.assertRaises(ValueError, df1.join, df2, on='a')
+        # merging
+        columns = ['a', 'b', ('l', 'c'), ('l', 'd'), ('r', 'c'), ('r', 'e')]
+        expected = DataFrame(columns=columns, data=[[0, 1, 2, 3, 4, 5]])
+        result = pd.merge(df1, df2, on='a')
+        tm.assert_frame_equal(result, expected)
 
     def test_reindex(self):
         newFrame = self.frame.reindex(self.ts1.index)
